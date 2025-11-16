@@ -359,8 +359,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🆘 Support & Community
 
 - 📚 **Documentation**: [Complete docs](docs/)
-- 🐛 **Issues**: [GitHub Issues](https://github.com/adimis-ai/cereon/issues)
-- 💬 **Discussions**: [GitHub Discussions](https://github.com/adimis-ai/cereon/discussions)
+- 🐛 **Issues**: [GitHub Issues](https://github.com/adimis-ai/cereon-dashboard/issues)
+- 💬 **Discussions**: [GitHub Discussions](https://github.com/adimis-ai/cereon-dashboard/discussions)
 - 🚀 **Examples**: [Live Examples](https://cereon-examples.vercel.app)
 
 ---

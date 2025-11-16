@@ -628,7 +628,7 @@ npm install react react-dom react-grid-layout framer-motion
 
 - Check the [API Reference](api-reference.md) for detailed component documentation
 - Browse [examples](examples/) for implementation patterns
-- Open an issue on [GitHub](https://github.com/adimis-ai/cereon/issues) for bugs
+- Open an issue on [GitHub](https://github.com/adimis-ai/cereon-dashboard/issues) for bugs
 
 ## Next Steps
 
