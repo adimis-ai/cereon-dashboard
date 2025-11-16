@@ -1,0 +1,237 @@
+/* Enhanced styles for DashboardReport grid layout */
+
+.dashboard-report {
+  /* Ensure proper containment for grid layout */
+  contain: layout style;
+}
+
+/* Grid container optimizations */
+.layout {
+  /* Improve rendering performance */
+  will-change: transform;
+
+  /* Smooth transitions for all grid operations */
+  transition: all 0.2s ease-out;
+}
+
+/* Card container styles */
+.dashboard-card-container {
+  /* Prevent flickering during drag operations */
+  backface-visibility: hidden;
+
+  /* Optimize for animations */
+  transform-style: preserve-3d;
+
+  /* Ensure proper z-index stacking */
+  position: relative;
+  z-index: 1;
+}
+
+/* Active dragging state */
+.dashboard-card-container.react-draggable-dragging {
+  z-index: 1000;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  transform: scale(1.02);
+  transition:
+    transform 0.1s ease-out,
+    box-shadow 0.1s ease-out;
+}
+
+/* Resizing state */
+.dashboard-card-container.react-resizable-resizing {
+  z-index: 999;
+  opacity: 0.9;
+}
+
+/* Drag handle styles */
+.card-drag-handle {
+  cursor: grab;
+  transition: opacity 0.2s ease-in-out;
+}
+
+.card-drag-handle:hover {
+  opacity: 0.8;
+}
+
+.card-drag-handle:active {
+  cursor: grabbing;
+}
+
+/* Grid item placeholder during drag */
+.react-grid-placeholder {
+  /* Minimal subtle placeholder using theme tokens when available */
+  background: rgba(0, 122, 204, 0.04) !important; /* subtle tint of --primary */
+  border: 1px solid rgba(0, 122, 204, 0.12) !important; /* thin subtle outline */
+  border-radius: 8px !important;
+  opacity: 1 !important;
+  transition:
+    opacity 0.12s ease-in-out,
+    transform 0.12s ease-in-out !important;
+  transform: translateZ(0);
+  box-shadow: none !important;
+  z-index: 2 !important;
+}
+
+/* Resize handles */
+.react-resizable-handle {
+  /* Minimal handle: small, circular touch target that blends with the card */
+  width: 12px !important;
+  height: 12px !important;
+  background: rgba(0, 122, 204, 0.12) !important; /* subtle primary tint */
+  border: 1px solid rgba(0, 122, 204, 0.18) !important;
+  border-radius: 50% !important;
+  opacity: 0; /* hidden by default on desktop */
+  transition:
+    opacity 0.12s ease-in-out,
+    transform 0.12s ease-in-out !important;
+  box-shadow: none !important;
+}
+
+.dashboard-card-container:hover .react-resizable-handle,
+.react-resizable-handle:focus,
+.react-resizable-handle:active {
+  opacity: 1;
+  transform: scale(1.05);
+}
+
+/* Southeast resize handle (bottom-right corner) */
+.react-resizable-handle-se {
+  bottom: 3px !important;
+  right: 3px !important;
+  width: 16px !important;
+  height: 16px !important;
+  background: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEzIDNMMTMgMTNMMTYgMTNMMTYgMTZMMTMgMTZMMTMgMTZMMTAgMTZMMTAgMTNMMTMgMTNMMTMgM1oiIGZpbGw9IiM2MzYzNzAiLz4KPHBhdGggZD0iTTcgN0w3IDEzTDEwIDEzTDEwIDE2TDcgMTZMNyAxNkw0IDE2TDQgMTNMNyAxM0w3IDdaIiBmaWxsPSIjNjM2MzcwIi8+Cjwvc3ZnPgo=")
+    no-repeat center !important;
+  background-size: 12px 12px !important;
+  cursor: se-resize !important;
+  border-radius: 0 0 8px 0 !important;
+}
+
+.react-resizable-handle-se:hover {
+  background-color: rgba(59, 130, 246, 0.1) !important;
+}
+
+/* Performance optimizations for large datasets */
+.virtualized-layout {
+  /* Use GPU acceleration */
+  transform: translateZ(0);
+}
+.react-grid-placeholder {
+  /* Minimal subtle placeholder using theme tokens when available */
+  background: rgba(0, 122, 204, 0.04) !important; /* subtle tint of --primary */
+  border: 1px solid rgba(0, 122, 204, 0.12) !important; /* thin subtle outline */
+  border-radius: 8px !important;
+  opacity: 1 !important;
+  transition:
+    opacity 0.12s ease-in-out,
+    transform 0.12s ease-in-out !important;
+  transform: translateZ(0);
+  box-shadow: none !important;
+  z-index: 2 !important;
+}
+/* Focus styles for accessibility */
+.dashboard-card-container:focus-within {
+  outline: 2px solid rgba(59, 130, 246, 0.5);
+  outline-offset: 2px;
+}
+
+/* Loading state animations */
+@keyframes cardShimmer {
+  0% {
+    .react-resizable-handle {
+      /* Minimal handle: small, circular touch target that blends with the card */
+      width: 12px !important;
+      height: 12px !important;
+      background: rgba(0, 122, 204, 0.12) !important; /* subtle primary tint */
+      border: 1px solid rgba(0, 122, 204, 0.18) !important;
+      border-radius: 50% !important;
+      opacity: 0; /* hidden by default on desktop */
+      transition:
+        opacity 0.12s ease-in-out,
+        transform 0.12s ease-in-out !important;
+      box-shadow: none !important;
+    }
+
+    .dashboard-card-container:hover .react-resizable-handle,
+    .react-resizable-handle:focus,
+    .react-resizable-handle:active {
+      opacity: 1;
+      transform: scale(1.05);
+    }
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 400% 100%;
+    animation: cardShimmer 1.2s ease-in-out infinite;
+  }
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+  .react-grid-placeholder {
+    background: rgba(96, 165, 250, 0.1) !important;
+    border-color: rgba(96, 165, 250, 0.3) !important;
+    .react-resizable-handle-se {
+      bottom: 6px !important;
+      right: 6px !important;
+      width: 12px !important;
+      height: 12px !important;
+      background: rgba(0, 122, 204, 0.12) !important;
+      background-size: 10px 10px !important;
+      cursor: se-resize !important;
+      border-radius: 50% !important;
+      border: 1px solid rgba(0, 122, 204, 0.16) !important;
+    }
+    .react-resizable-handle-se:hover {
+      background: rgba(0, 122, 204, 0.16) !important;
+    }
+  }
+}
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-card-container,
+  .layout,
+  .card-drag-handle,
+  .react-grid-placeholder,
+  .react-resizable-handle {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .react-grid-placeholder {
+    border-color: currentColor !important;
+    background: transparent !important;
+  }
+
+  .dashboard-card-container:focus-within {
+    outline: 3px solid currentColor;
+  }
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  .react-resizable-handle {
+    opacity: 1; /* Always show on mobile */
+    transform: scale(1.2); /* Larger touch targets */
+  }
+
+  .card-drag-handle {
+    opacity: 1;
+    padding: 8px; /* Larger touch area */
+  }
+}
+
+/* Print styles */
+@media print {
+  .react-resizable-handle,
+  .card-drag-handle {
+    display: none !important;
+  }
+
+  .dashboard-card-container {
+    break-inside: avoid;
+    box-shadow: none !important;
+    transform: none !important;
+  }
+}
