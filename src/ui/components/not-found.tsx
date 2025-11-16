@@ -2,7 +2,6 @@
 
 import { FC, useState, useEffect } from "react";
 import { Home } from "lucide-react";
-import { Link } from "react-router-dom";
 
 interface NotFoundProps {
   title?: string;

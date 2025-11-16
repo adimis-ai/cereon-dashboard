@@ -7,4 +7,3 @@ export * from "./use-media-query";
 export * from "./use-mobile";
 export * from "./use-query-string";
 export * from "./use-storage";
-export * from "./use-resource-sync";
