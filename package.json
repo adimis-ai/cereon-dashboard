@@ -10,15 +10,15 @@
     "components",
     "cards"
   ],
-  "author": "Your Name <you@example.com>",
+  "author": "Aditya Mishra <adimis.sde@gmail.com>",
   "license": "MIT",
-  "homepage": "https://github.com/your-org/your-repo#readme",
+  "homepage": "https://github.com/adimis-ai/cereon-dashboard#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/your-org/your-repo.git"
+    "url": "git+https://github.com/adimis-ai/cereon-dashboard.git"
   },
   "bugs": {
-    "url": "https://github.com/your-org/your-repo/issues"
+    "url": "https://github.com/adimis-ai/cereon-dashboard/issues"
   },
   "engines": {
     "node": ">=14"
