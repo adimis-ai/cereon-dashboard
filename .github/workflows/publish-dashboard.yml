@@ -67,7 +67,7 @@ jobs:
         run: |
           corepack enable
           pnpm install --frozen-lockfile
-          pnpm -w --filter @cereon/dashboard... build || pnpm --filter @cereon/dashboard... run build
+          pnpm run build
 
       - name: Verify npm identity (sanity)
         env:
@@ -82,4 +82,4 @@ jobs:
         run: |
           echo "Publishing @cereon/dashboard@${VERSION}"
           # Publish package from its package folder
-          (cd cereon-dashboard && jq -r .version package.json && npm publish --access public --registry https://registry.npmjs.org)
+          (jq -r .version package.json && npm publish --access public --registry https://registry.npmjs.org)
