@@ -43,8 +43,8 @@ jobs:
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           echo "branch=${BRANCH}" >> "$GITHUB_OUTPUT"
 
-      - name: Update package.json version (packages/cereon-dashboard)
-        working-directory: packages/cereon-dashboard
+      - name: Update package.json version (cereon-dashboard)
+        working-directory: .
         env:
           VERSION: ${{ steps.vars.outputs.version }}
         run: |
@@ -67,10 +67,7 @@ jobs:
         run: |
           corepack enable
           pnpm install --frozen-lockfile
-          pnpm -w --filter @cereon/dashboard... build || (
-            cd packages/cereon-dashboard
-            npm run build
-          )
+          pnpm run build
 
       - name: Verify npm identity (sanity)
         env:
@@ -78,11 +75,11 @@ jobs:
         run: npm whoami
 
       - name: Publish @cereon/dashboard
-        working-directory: packages/cereon-dashboard
+        working-directory: .
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           VERSION: ${{ steps.vars.outputs.version }}
         run: |
           echo "Publishing @cereon/dashboard@${VERSION}"
-          jq -r .version package.json
-          npm publish --access public --registry https://registry.npmjs.org
+          # Publish package from its package folder
+          (jq -r .version package.json && npm publish --access public --registry https://registry.npmjs.org)
