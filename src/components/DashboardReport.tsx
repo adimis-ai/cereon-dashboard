@@ -10,7 +10,7 @@ import { Layout, Responsive, WidthProvider } from "react-grid-layout";
 import { DashboardReportSpec } from "../types";
 import { CardGridPosition } from "../types";
 import { useDashboard } from "../contexts/dashboard";
-import { cn } from "../ui";
+import { cn } from "../ui/lib";
 import {
   saveLayoutToStorage,
   loadLayoutFromStorage,

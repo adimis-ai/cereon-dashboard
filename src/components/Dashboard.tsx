@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { DynamicTabs } from "../ui";
 import { Badge } from "../ui";
 import { RotateCw } from "lucide-react";
-import { cn } from "../ui";
+import { cn } from "../ui/lib";
 import { useDashboard } from "../contexts/dashboard";
 import { NumberCard } from "../cards/number";
 import { TableCard } from "../cards/table";

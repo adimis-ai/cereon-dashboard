@@ -19,7 +19,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { DynamicDropdownMenu } from "../ui";
-import { cn } from "../ui";
+import { cn } from "../ui/lib";
 import {
   CardSettingsMap,
   CardRecordMap,
