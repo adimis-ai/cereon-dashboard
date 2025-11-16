@@ -23,19 +23,20 @@ export default defineConfig({
       js: '"use client";',
     };
   },
-  // Handle CSS files by copying them to dist
   onSuccess: async () => {
-    // Copy CSS files manually since tsup doesn't handle CSS imports well
     const { copyFile, mkdir } = await import("fs/promises");
     const path = await import("path");
     
     try {
-      // Ensure the components directory exists
       await mkdir("dist/components", { recursive: true });
-      // Copy the CSS file
       await copyFile(
         "src/components/DashboardReport.module.css",
         "dist/components/DashboardReport.module.css"
+      );
+      await mkdir("dist/ui/styles", { recursive: true });
+      await copyFile(
+        "src/ui/styles/globals.css",
+        "dist/ui/styles/globals.css"
       );
       console.log("✓ CSS files copied successfully");
     } catch (error) {
