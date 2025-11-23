@@ -222,7 +222,8 @@ function DashboardCardInternal<
 
   const cardState = getCardState(reportId, card.id);
 
-  const handleRefresh = useCallback(async () => {
+  const handleQueryCall = useCallback(async () => {
+    if(card.renderCard && typeof card.renderCard === "function") return;
     if (state.loadingState === "loading") return;
 
     try {
@@ -238,7 +239,7 @@ function DashboardCardInternal<
 
   useEffect(() => {
     // Auto-refresh on filter change
-    void handleRefresh();
+    void handleQueryCall();
   }, [filterState]);
 
   const canDownload =
@@ -275,10 +276,10 @@ function DashboardCardInternal<
     if (cardState.loadingState === "idle" && !autoRefreshedRef.current) {
       autoRefreshedRef.current = true;
       queueMicrotask(() => {
-        void handleRefresh();
+        void handleQueryCall();
       });
     }
-  }, [cardState.loadingState, handleRefresh]);
+  }, [cardState.loadingState, handleQueryCall]);
 
   const cardClasses = cn(
     "bg-card text-card-foreground rounded-xl border shadow-sm md:min-w-0 flex flex-col transition-all duration-200 ease-out",
@@ -354,7 +355,7 @@ function DashboardCardInternal<
                 size={"sm"}
                 onClick={async (e) => {
                   e.preventDefault();
-                  await handleRefresh();
+                  await handleQueryCall();
                 }}
                 icon={
                   <RefreshCw
@@ -459,7 +460,7 @@ function DashboardCardInternal<
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={handleRefresh}
+                          onClick={handleQueryCall}
                           className="mt-2 h-7 px-2 text-xs"
                         >
                           Try Again
@@ -551,7 +552,7 @@ function DashboardCardInternal<
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={handleRefresh}
+                          onClick={handleQueryCall}
                           className="h-7 px-2 text-xs"
                         >
                           <RefreshCw className="w-3 h-3 mr-1" />
