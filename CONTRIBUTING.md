@@ -1,4 +1,3 @@
-
 # Contributing to @cereon/dashboard
 
 Thank you for your interest in contributing! This document explains how to set up a local development environment, run tests and linters, follow commit conventions, and publish releases for the `@cereon/dashboard` package.
@@ -6,19 +5,22 @@ Thank you for your interest in contributing! This document explains how to set u
 ## Quick start (local development)
 
 Prerequisites:
+
 - Node.js 20+ (use nvm to manage versions)
 - pnpm (this monorepo uses pnpm workspace tooling)
 
 1. From the repository root:
-	- Install workspace dependencies: `pnpm install`
-	- Start a dev server for the demo client: `pnpm --filter cereon-demo-client dev`
+
+   - Install workspace dependencies: `pnpm install`
+   - Start a dev server for the demo client: `pnpm --filter cereon-demo-client dev`
 
 2. Work inside `packages/cereon-dashboard`:
-	- Build: `pnpm --filter @cereon/dashboard build`
-	- Run type checks: `pnpm --filter @cereon/dashboard -w tsc --noEmit`
+
+   - Build: `pnpm --filter @cereon/dashboard build`
+   - Run type checks: `pnpm --filter @cereon/dashboard -w tsc --noEmit`
 
 3. Storybook / Demo
-	- The repository includes a `cereon-demo-client` project for manual testing and integration. Use it to exercise cards and UI components.
+   - The repository includes a `cereon-demo-client` project for manual testing and integration. Use it to exercise cards and UI components.
 
 ## Linting & formatting
 
@@ -34,6 +36,7 @@ Follow existing ESLint and TypeScript rules. If you need to adjust lint rules, o
 - CI: Pull requests must include passing CI checks. Add unit tests for bug fixes and new features.
 
 Test guidance:
+
 - Keep tests fast and deterministic.
 - Mock network calls and timers.
 
