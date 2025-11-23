@@ -256,7 +256,7 @@ export interface DashboardReportCardSpec<
   isResizable?: boolean;
   query?: DashboardQuerySpec<M, R>;
   gridPosition?: CardGridPosition;
-  renderCard?: (props: BaseCardProps<K, M, R>) => React.ReactNode;
+  renderCard?: (props?: BaseCardProps<K, M, R>) => React.ReactNode;
 }
 
 export type AnyDashboardReportCardSpec<
