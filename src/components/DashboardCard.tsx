@@ -221,6 +221,7 @@ function DashboardCardInternal<
   const { executeQuery, state } = useCardExecution(reportId, card.id);
 
   const cardState = getCardState(reportId, card.id);
+  const hasCustomRender = typeof card.renderCard === "function";
 
   const handleQueryCall = useCallback(async () => {
     if(card.renderCard && typeof card.renderCard === "function") return;
@@ -419,10 +420,17 @@ function DashboardCardInternal<
         tabIndex={0}
         aria-label={card.title || "Dashboard card"}
       >
-        {!card.hideHeader && card.kind !== "number" && (
+        {!hasCustomRender && !card.hideHeader && card.kind !== "number" && (
           <div className="px-2 pt-2">{renderCardHeaderContent()}</div>
         )}
-        <div className="flex-1 overflow-hidden px-4">
+        <div
+          className={cn(
+            "flex-1 overflow-hidden",
+            // When a custom render function is provided we want the content
+            // to occupy the full card without the usual horizontal padding.
+            hasCustomRender ? "px-0 py-0" : "px-4"
+          )}
+        >
           <div className={cn("h-full relative")}>
             <motion.div
               initial={animations !== "none" ? { opacity: 0, y: 10 } : false}
@@ -474,9 +482,9 @@ function DashboardCardInternal<
                 if (cardState.loadingState === "success") {
                   // If a custom renderCard callback is provided on the card spec,
                   // call it directly with the full BaseCardProps and render its result.
-                  if (typeof card.renderCard === "function") {
+                  if (hasCustomRender) {
                     try {
-                      return card.renderCard({
+                      return (card.renderCard as any)({
                         reportId,
                         state: cardState,
                         params: runtimeParams ?? null,
@@ -572,7 +580,7 @@ function DashboardCardInternal<
             </span>
           </div>
         </div>
-        {!card.hideFooter && renderCardFooterContent()}
+        {!hasCustomRender && !card.hideFooter && renderCardFooterContent()}
       </div>
     </Fragment>
   );
