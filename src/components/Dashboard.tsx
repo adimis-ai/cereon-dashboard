@@ -11,14 +11,6 @@ import { TableCard } from "../cards/table";
 import { HtmlCard } from "../cards/html";
 import { IframeCard } from "../cards/iframe";
 import { MarkdownCard } from "../cards/markdown";
-import {
-  AreaChartCard,
-  BarChartCard,
-  LineChartCard,
-  PieChartCard,
-  RadarChartCard,
-  RadialChartCard,
-} from "../cards/charts";
 import { DashboardReport } from "./DashboardReport";
 import "../ui/styles/globals.css";
 
@@ -36,12 +28,10 @@ export function Dashboard({
   className,
   style,
   singleReport = false,
-  registerDefaultCards = true,
 }: {
   className?: string;
   singleReport?: boolean;
   style?: React.CSSProperties;
-  registerDefaultCards?: boolean;
 }) {
   const {
     spec,
@@ -50,33 +40,7 @@ export function Dashboard({
     theme,
     animations,
     reportStates,
-    registerCard,
-    registeredCards,
   } = useDashboard();
-
-  useEffect(() => {
-    if (!registerDefaultCards) return;
-    try {
-      if (registerCard) {
-        if (!registeredCards?.number) registerCard("number", NumberCard as any);
-        if (!registeredCards?.table) registerCard("table", TableCard as any);
-        if (!registeredCards?.html) registerCard("html", HtmlCard as any);
-        if (!registeredCards?.iframe) registerCard("iframe", IframeCard as any);
-        if (!registeredCards?.markdown)
-          registerCard("markdown", MarkdownCard as any);
-        if (!registeredCards?.area) registerCard("area", AreaChartCard as any);
-        if (!registeredCards?.bar) registerCard("bar", BarChartCard as any);
-        if (!registeredCards?.line) registerCard("line", LineChartCard as any);
-        if (!registeredCards?.pie) registerCard("pie", PieChartCard as any);
-        if (!registeredCards?.radar)
-          registerCard("radar", RadarChartCard as any);
-        if (!registeredCards?.radial)
-          registerCard("radial", RadialChartCard as any);
-      }
-    } catch (e) {
-      console.warn("Failed to register default dashboard cards", e);
-    }
-  }, [registerDefaultCards]);
 
   if (!spec) {
     return (
