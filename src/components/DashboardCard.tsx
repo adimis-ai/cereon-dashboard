@@ -43,7 +43,7 @@ import {
 export interface DashboardCardProps<
   K extends string,
   M extends CardSettingsMap,
-  R extends CardRecordMap = CardRecordMap,
+  R extends CardRecordMap = CardRecordMap
 > {
   reportId: string;
   card: DashboardReportCardSpec<K, M, R>;
@@ -83,7 +83,9 @@ function buildFilename(params: {
   cardId: string;
   ext: DownloadFormat;
 }): string {
-  const base = `${slugify(params.title)}_${params.reportId}_${params.cardId}_${tsStamp()}`;
+  const base = `${slugify(params.title)}_${params.reportId}_${
+    params.cardId
+  }_${tsStamp()}`;
   return `${base}.${params.ext}`;
 }
 
@@ -102,11 +104,11 @@ function normalizeRecords(records: unknown[]): {
     const header =
       (Array.isArray(first.columns) &&
         first.columns.map((c: any) =>
-          typeof c === "string" ? c : (c?.key ?? c?.name)
+          typeof c === "string" ? c : c?.key ?? c?.name
         )) ||
       (Array.isArray(first.headers) &&
         first.headers.map((h: any) =>
-          typeof h === "string" ? h : (h?.key ?? h?.name)
+          typeof h === "string" ? h : h?.key ?? h?.name
         )) ||
       undefined;
     const shapedRows = Array.isArray(first.rows)
@@ -156,10 +158,10 @@ function toCsv(records: unknown[]): string {
       val === null || val === undefined
         ? ""
         : typeof val === "string"
-          ? val
-          : typeof val === "number" || typeof val === "boolean"
-            ? String(val)
-            : JSON.stringify(val);
+        ? val
+        : typeof val === "number" || typeof val === "boolean"
+        ? String(val)
+        : JSON.stringify(val);
     if (/[",\n\r]/.test(s)) {
       return `"${s.replace(/"/g, '""')}"`;
     }
@@ -203,7 +205,7 @@ function triggerDownload({
 function DashboardCardInternal<
   K extends string,
   M extends CardSettingsMap,
-  R extends CardRecordMap = CardRecordMap,
+  R extends CardRecordMap = CardRecordMap
 >({
   reportId,
   card,
@@ -476,11 +478,11 @@ function DashboardCardInternal<
                       return card.renderCard({
                         reportId,
                         state: cardState,
-                        params: (runtimeParams as DashboardParameters) ?? null,
-                        records: records as any,
-                        card: card as any,
+                        params: runtimeParams ?? null,
+                        records: records,
+                        card: card,
                         className,
-                        theme: (theme as any) ?? "light",
+                        theme: theme ?? "light",
                       } as BaseCardProps<K, M, R>);
                     } catch (e) {
                       // fall through to registered component / fallback
@@ -578,7 +580,7 @@ function DashboardCardInternal<
 export function DashboardCard<
   K extends string,
   M extends CardSettingsMap,
-  R extends CardRecordMap = CardRecordMap,
+  R extends CardRecordMap = CardRecordMap
 >({ reportId, card, className }: DashboardCardProps<K, M, R>) {
   const {
     parameters: runtimeParams,
