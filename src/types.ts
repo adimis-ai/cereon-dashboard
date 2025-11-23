@@ -1,4 +1,5 @@
 import { FormFieldOrGroup } from "./ui";
+import React from "react";
 
 // packages/cereon-dashboard/src/types.ts
 export enum DashboardDownloadFormat {
@@ -242,19 +243,20 @@ export interface DashboardReportCardSpec<
   M extends CardSettingsMap,
   R extends CardRecordMap = CardRecordMap,
 > {
+  kind: K;
   id: string;
   title: string;
-  description?: string;
-  kind: K;
   settings?: M[K];
+  className?: string;
+  description?: string;
   hideHeader?: boolean;
   hideFooter?: boolean;
-  query?: DashboardQuerySpec<M, R>;
-  gridPosition?: CardGridPosition;
-  className?: string;
   "aria-label"?: string;
   isDraggable?: boolean;
   isResizable?: boolean;
+  query?: DashboardQuerySpec<M, R>;
+  gridPosition?: CardGridPosition;
+  renderCard?: (props: BaseCardProps<K, M, R>) => React.ReactNode;
 }
 
 export type AnyDashboardReportCardSpec<

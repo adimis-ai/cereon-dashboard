@@ -24,6 +24,7 @@ import {
   CardSettingsMap,
   CardRecordMap,
   DashboardReportCardSpec,
+  BaseCardProps,
   AnyCardRecord,
   PreProcessor,
   PostProcessor,
@@ -211,7 +212,7 @@ function DashboardCardInternal<
   filterState,
   setFilterState,
 }: DashboardCardProps<K, M, R>) {
-  const { getCardState, setCardState, animations, registeredCards } =
+  const { getCardState, setCardState, animations, registeredCards, theme } =
     useDashboard();
   const { cardRef, setFocus } = useCardVisibility(reportId, card.id);
   const [records] = useDashboardRecord(reportId, card.id);
@@ -468,6 +469,25 @@ function DashboardCardInternal<
 
                 // Success state: use registered component
                 if (cardState.loadingState === "success") {
+                  // If a custom renderCard callback is provided on the card spec,
+                  // call it directly with the full BaseCardProps and render its result.
+                  if (typeof card.renderCard === "function") {
+                    try {
+                      return card.renderCard({
+                        reportId,
+                        state: cardState,
+                        params: (runtimeParams as DashboardParameters) ?? null,
+                        records: records as any,
+                        card: card as any,
+                        className,
+                        theme: (theme as any) ?? "light",
+                      } as BaseCardProps<K, M, R>);
+                    } catch (e) {
+                      // fall through to registered component / fallback
+                      console.error("Error in card.renderCard:", e);
+                    }
+                  }
+
                   const RegisteredComponent = registeredCards?.[card.kind];
                   if (RegisteredComponent) {
                     try {
@@ -485,6 +505,7 @@ function DashboardCardInternal<
                       /* fall back */
                     }
                   }
+
                   return (
                     <div className="h-full flex items-center justify-center">
                       <div className="max-w-xs text-center">
