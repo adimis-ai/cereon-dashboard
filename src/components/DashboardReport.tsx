@@ -437,7 +437,7 @@ export function DashboardReport({
         isStorageAvailable()
       ) {
         // Backup save (in case debounced save was missed)
-        console.debug("Backup auto-save for layout:", report.id);
+        console.log("Backup auto-save for layout:", report.id);
         saveLayoutToStorage(layoutRef.current, {
           dashboardId: dashboardId,
           reportId: report.id,

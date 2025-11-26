@@ -69,7 +69,7 @@ export function saveLayoutToStorage(
 
     localStorage.setItem(layoutKey, JSON.stringify(layoutWithMetadata));
     
-    console.debug('Layout saved to localStorage:', {
+    console.log('Layout saved to localStorage:', {
       key: layoutKey,
       cardCount: layout.length,
       timestamp: layoutWithMetadata.timestamp,
@@ -90,7 +90,7 @@ export function loadLayoutFromStorage(
     const stored = localStorage.getItem(layoutKey);
     
     if (!stored) {
-      console.debug('No saved layout found for key:', layoutKey);
+      console.log('No saved layout found for key:', layoutKey);
       return null;
     }
 
@@ -99,7 +99,7 @@ export function loadLayoutFromStorage(
     // Handle both old format (direct layout object) and new format (with metadata)
     if (parsed.layout && parsed.version) {
       // New format with metadata
-      console.debug('Loaded layout from localStorage:', {
+      console.log('Loaded layout from localStorage:', {
         key: layoutKey,
         timestamp: parsed.timestamp,
         version: parsed.version,
@@ -108,7 +108,7 @@ export function loadLayoutFromStorage(
       return parsed.layout;
     } else {
       // Legacy format - assume the entire object is the layout
-      console.debug('Loaded legacy layout from localStorage:', {
+      console.log('Loaded legacy layout from localStorage:', {
         key: layoutKey,
         cardCount: Object.keys(parsed).length,
       });
@@ -127,7 +127,7 @@ export function clearLayoutFromStorage(options: LayoutPersistenceOptions): void 
   try {
     const layoutKey = getLayoutKey(options);
     localStorage.removeItem(layoutKey);
-    console.debug('Cleared layout from localStorage:', layoutKey);
+    console.log('Cleared layout from localStorage:', layoutKey);
   } catch (error) {
     console.warn('Failed to clear layout from localStorage:', error);
   }
@@ -162,7 +162,7 @@ export function clearDashboardLayouts(dashboardId: string): void {
   try {
     const keys = getDashboardLayoutKeys(dashboardId);
     keys.forEach(key => localStorage.removeItem(key));
-    console.debug('Cleared all layouts for dashboard:', dashboardId, keys.length);
+    console.log('Cleared all layouts for dashboard:', dashboardId, keys.length);
   } catch (error) {
     console.warn('Failed to clear dashboard layouts:', error);
   }
