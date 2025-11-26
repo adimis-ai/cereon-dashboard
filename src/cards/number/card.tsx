@@ -40,6 +40,7 @@ export interface DashboardNumberCardRecord extends BaseDashboardCardRecord {
   trend?: TrendDirection;
   trendPercentage?: number;
   label?: string;
+  description?: string;
   meta?: QueryMeta & { unit?: string; format?: string; [k: string]: any };
 }
 
@@ -302,11 +303,18 @@ export function NumberCard({ card, records, className }: NumberCardProps) {
         <div className="card-drag-handle cursor-move rounded flex-shrink-0">
           <GripVertical className="text-muted-foreground size-4" />
         </div>
-        {label && (
-          <div className="text-sm font-medium text-muted-foreground leading-tight">
-            {label}
-          </div>
-        )}
+        <div className="leading-tight">
+          {label && (
+            <div className="text-sm font-medium text-muted-foreground">
+              {label}
+            </div>
+          )}
+          {(record?.description ?? card.description) && (
+            <div className="text-xs text-muted-foreground mt-0.5">
+              {record?.description ?? card.description}
+            </div>
+          )}
+        </div>
       </div>
 
       <div
