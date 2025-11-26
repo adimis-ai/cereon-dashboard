@@ -439,6 +439,26 @@ function DashboardCardInternal<
               className="h-full flex flex-col"
             >
               {(() => {
+                // If a custom renderCard callback is provided on the card spec,
+                // call it immediately and render its result. Custom renderers
+                // are responsible for their own loading/error UI.
+                if (hasCustomRender) {
+                  try {
+                    return (card.renderCard as any)({
+                      reportId,
+                      state: cardState,
+                      params: runtimeParams ?? null,
+                      records: records,
+                      card: card,
+                      className,
+                      theme: theme ?? "light",
+                    } as BaseCardProps<K, M, R>);
+                  } catch (e) {
+                    console.error("Error in card.renderCard:", e);
+                    // fall through to default rendering below
+                  }
+                }
+
                 // Loading state
                 if (cardState.loadingState === "loading") {
                   return (
@@ -482,22 +502,7 @@ function DashboardCardInternal<
                 if (cardState.loadingState === "success") {
                   // If a custom renderCard callback is provided on the card spec,
                   // call it directly with the full BaseCardProps and render its result.
-                  if (hasCustomRender) {
-                    try {
-                      return (card.renderCard as any)({
-                        reportId,
-                        state: cardState,
-                        params: runtimeParams ?? null,
-                        records: records,
-                        card: card,
-                        className,
-                        theme: theme ?? "light",
-                      } as BaseCardProps<K, M, R>);
-                    } catch (e) {
-                      // fall through to registered component / fallback
-                      console.error("Error in card.renderCard:", e);
-                    }
-                  }
+                  // At this point we render the registered component or fallback.
 
                   const RegisteredComponent = registeredCards?.[card.kind];
                   if (RegisteredComponent) {
