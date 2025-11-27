@@ -10,7 +10,7 @@ import {
 } from "./dialog";
 import { Button } from "./button";
 import { cn } from "../lib/index";
-import { Separator } from "./separator";
+import { Save, X } from "lucide-react";
 
 export interface ModalProps {
   open: boolean;
@@ -18,6 +18,7 @@ export interface ModalProps {
   title: string;
   description?: string;
   children: React.ReactNode;
+  additionalButtons?: React.ReactNode;
   trigger?: {
     label?: string;
     icon?: React.ReactNode;
@@ -80,6 +81,7 @@ export const Modal: React.FC<ModalProps> = ({
   hideCancelButton = false,
   hideSave = false,
   footer,
+  additionalButtons,
 }) => {
   const [loading, setLoading] = React.useState(false);
 
@@ -152,14 +154,15 @@ export const Modal: React.FC<ModalProps> = ({
           : !disableSave && (
               <DialogFooter>
                 <div className="flex justify-end space-x-2 px-6">
+                  {additionalButtons}
                   {!hideCancelButton && (
                     <Button
                       variant="outline"
                       onClick={() => onOpenChange?.(false)}
                       size="sm"
-                    >
-                      Cancel
-                    </Button>
+                      icon={<X className="size-4" />}
+                      label="Cancel"
+                    />
                   )}
                   {!hideSave && (
                     <Button
@@ -167,7 +170,7 @@ export const Modal: React.FC<ModalProps> = ({
                       loading={loading}
                       tooltip="Save current changes"
                       variant={submitButton?.variant as any}
-                      icon={submitButton?.icon}
+                      icon={submitButton?.icon || <Save className="size-4" />}
                       label={submitButton?.text || "Save"}
                       size={submitButton?.size || "sm"}
                     />

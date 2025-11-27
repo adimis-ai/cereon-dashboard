@@ -90,6 +90,7 @@ export function TableCard({
   className,
   reportId,
 }: TableCardProps) {
+  const isHttpCard = card.query?.variant === "http";
   const settings = card.settings as DashboardTableSettings;
   const storageKey = useMemo(
     () => `table-card-${reportId}-${card.id}-page`,
@@ -144,7 +145,36 @@ export function TableCard({
   // by checking a stable key (id fields or JSON fallback). Header records (no rows)
   // are used to set total/columns if provided.
   useEffect(() => {
+    console.log("[TableCard] Incoming records:", records);
     if (!records || records.length === 0) return;
+    // Fast-path for HTTP variant: records represent final page(s)
+    if (isHttpCard) {
+      // Flatten rows across all records and use as authoritative set
+      const flatRows: Record<string, any>[] = [];
+      let headerCols: string[] | undefined = undefined;
+      let headerTotal: number | undefined = undefined;
+
+      for (const record of records) {
+        if (Array.isArray(record.rows)) {
+          flatRows.push(...record.rows);
+        }
+        if (headerCols == null && Array.isArray(record.columns)) {
+          headerCols = record.columns;
+        }
+        if (headerTotal == null && typeof record.totalCount === "number") {
+          headerTotal = record.totalCount;
+        }
+      }
+
+      // Replace collected storage with authoritative HTTP response
+      setCollectedRows(flatRows);
+      if (headerCols !== undefined) setCollectedColumns(headerCols);
+      if (headerTotal !== undefined) setCollectedTotal(headerTotal);
+
+      // Clear streaming dedup state to avoid mixing modes
+      seenKeysRef.current = new Set();
+      return;
+    }
 
     let addedRows: Record<string, any>[] = [];
 

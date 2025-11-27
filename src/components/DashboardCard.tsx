@@ -13,6 +13,7 @@ import { ButtonGroup } from "../ui";
 import { Spinner } from "../ui";
 import {
   AlertTriangle,
+  Brush,
   Check,
   Download,
   GripVertical,
@@ -313,7 +314,6 @@ function DashboardCardInternal<
           size: "sm",
         }}
         title={card.title ? `${card.title} - Filters` : "Filters"}
-        // description={card.description ?? "Adjust filters for this card"}
         formProps={{
           formFields: filterSchema?.schema ?? [],
           disableForm: filterSchema?.disabled,
@@ -323,6 +323,9 @@ function DashboardCardInternal<
         }}
         onSubmit={async (values: any) => {
           setFilterState((prev) => ({ ...(prev || {}), ...(values || {}) }));
+        }}
+        onReset={() => {
+          setFilterState && setFilterState({});
         }}
       />
     );

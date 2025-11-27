@@ -53,7 +53,7 @@ export interface CardExecutionState {
 
 export interface CardExecutionContextType<
   M extends CardSettingsMap = CardSettingsMap,
-  R extends CardRecordMap = CardRecordMap,
+  R extends CardRecordMap = CardRecordMap
 > {
   state: CardExecutionState;
   executeQuery: (params: Record<string, any>) => Promise<void>;
@@ -69,14 +69,14 @@ export interface CardExecutionContextType<
 
 const createCardExecutionContext = <
   M extends CardSettingsMap = CardSettingsMap,
-  R extends CardRecordMap = CardRecordMap,
+  R extends CardRecordMap = CardRecordMap
 >() => createContext<CardExecutionContextType<M, R> | undefined>(undefined);
 
 const cardContexts = new Map<string, React.Context<any>>();
 
 export const getCardExecutionContext = <
   M extends CardSettingsMap = CardSettingsMap,
-  R extends CardRecordMap = CardRecordMap,
+  R extends CardRecordMap = CardRecordMap
 >(
   cardKey: string
 ) => {
@@ -90,7 +90,7 @@ export const getCardExecutionContext = <
 
 interface CardExecutionProviderProps<
   M extends CardSettingsMap = CardSettingsMap,
-  R extends CardRecordMap = CardRecordMap,
+  R extends CardRecordMap = CardRecordMap
 > {
   reportId: string;
   cardId: string;
@@ -108,7 +108,7 @@ interface CardExecutionProviderProps<
 
 export const CardExecutionProvider = <
   M extends CardSettingsMap = CardSettingsMap,
-  R extends CardRecordMap = CardRecordMap,
+  R extends CardRecordMap = CardRecordMap
 >({
   reportId,
   cardId,
@@ -548,9 +548,9 @@ export const CardExecutionProvider = <
       const paramsJson = JSON.stringify(payload?.params ?? {});
       const isGet = (payload.method ?? "GET").toUpperCase() === "GET";
       const finalUrl = isGet
-        ? `${payload.url}${payload.url!.includes("?") ? "&" : "?"}params=${encodeURIComponent(
-            paramsJson
-          )}`
+        ? `${payload.url}${
+            payload.url!.includes("?") ? "&" : "?"
+          }params=${encodeURIComponent(paramsJson)}`
         : payload.url!;
 
       const headers: Record<string, string> = { ...(payload.headers ?? {}) };
@@ -1038,7 +1038,9 @@ export const CardExecutionProvider = <
                       messageData.message || messageData.error
                     );
                     updateState({
-                      error: `Subscription error: ${messageData.message || messageData.error}`,
+                      error: `Subscription error: ${
+                        messageData.message || messageData.error
+                      }`,
                     });
                     return;
                   }
@@ -1075,7 +1077,9 @@ export const CardExecutionProvider = <
               } catch (error) {
                 console.error("Error processing WebSocket message:", error);
                 updateState({
-                  error: `Message processing error: ${error instanceof Error ? error.message : "Unknown error"}`,
+                  error: `Message processing error: ${
+                    error instanceof Error ? error.message : "Unknown error"
+                  }`,
                 });
               }
             };
@@ -1350,15 +1354,14 @@ export const CardExecutionProvider = <
       try {
         const processedQuery = await runPreProcessors(query, preProcessors);
 
-        const resolvedQuery = resolveParamPlaceholders(
-          processedQuery,
-          {
-            ...runtimeParams,
-            ...params,
-          } as Record<string, unknown>
-        );
+        const resolvedQuery = resolveParamPlaceholders(processedQuery, {
+          ...runtimeParams,
+          ...params,
+        } as Record<string, unknown>);
 
         let rawData: any;
+
+        console.log("[executeQuery] Executing query with resolved spec:", resolvedQuery);
 
         switch (resolvedQuery.variant) {
           case "http":
@@ -1483,7 +1486,7 @@ export const CardExecutionProvider = <
 
 export const useCardExecution = <
   M extends CardSettingsMap = CardSettingsMap,
-  R extends CardRecordMap = CardRecordMap,
+  R extends CardRecordMap = CardRecordMap
 >(
   reportId: string,
   cardId: string

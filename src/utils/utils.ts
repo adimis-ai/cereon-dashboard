@@ -26,6 +26,7 @@ export function resolveParamPlaceholders<T>(
 ): T {
   const root = (runtimeParams ?? {}) as Record<string, unknown>;
   const ctx: Ctx = { runtime: root };
+  console.log("[resolveParamPlaceholders] Resolving params with runtime:", root);
 
   const visit = (node: any): any => {
     if (typeof node === "string") return resolveInString(node, ctx);
@@ -38,7 +39,28 @@ export function resolveParamPlaceholders<T>(
     return node;
   };
 
-  return visit(value);
+  const processedValue = visit(value);
+
+  // Final sanitization pass: if any string still contains an unresolved placeholder
+  // (e.g. "${{ runtime.foo }}"), convert it to `null`. This ensures callers
+  // won't receive raw placeholder strings in the resolved output.
+  const sanitizePlaceholders = (node: any): any => {
+    if (typeof node === "string") {
+      if (PLACEHOLDER_RE.test(node) || SINGLE_PLACEHOLDER_RE.test(node)) return null;
+      return node;
+    }
+    if (Array.isArray(node)) return node.map(sanitizePlaceholders);
+    if (isPlainObject(node)) {
+      const out: Record<string, unknown> = {};
+      for (const [k, v] of Object.entries(node)) out[k] = sanitizePlaceholders(v);
+      return out;
+    }
+    return node;
+  };
+
+  const sanitized = sanitizePlaceholders(processedValue);
+  console.log("[resolveParamPlaceholders] Processed value:", sanitized);
+  return sanitized;
 }
 
 type Ctx = {
@@ -52,10 +74,17 @@ function resolveInString(str: string, ctx: Ctx): any {
     return resolved === undefined ? null : resolved;
   }
 
-  return str.replace(PLACEHOLDER_RE, (_: string, expr: string) => {
+  let sawUndefined = false;
+  const replaced = str.replace(PLACEHOLDER_RE, (_: string, expr: string) => {
     const v = safeResolvePath((expr ?? "").trim(), ctx);
+    if (v === undefined) {
+      sawUndefined = true;
+      return ""; // value doesn't matter, we'll return null below
+    }
     return stringifyForInterpolation(v);
   });
+
+  return sawUndefined ? null : replaced;
 }
 
 function stringifyForInterpolation(v: unknown): string {

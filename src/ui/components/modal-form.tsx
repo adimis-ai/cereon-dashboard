@@ -3,6 +3,8 @@ import { z } from "zod";
 import type { FormComponentProps } from "./data-form/interface";
 import { FormComponent } from "./data-form/form";
 import { Modal, ModalProps } from "./modal";
+import { Button } from "./button";
+import { Brush } from "lucide-react";
 import { FieldErrors } from "react-hook-form";
 import { ErrorDisplay } from "./error-display";
 
@@ -13,11 +15,13 @@ export interface ModalFormProps<TSchema extends z.ZodType<any, any>>
     "hideSubmitButton" | "onChange" | "onSubmit"
   >;
   onSubmit?: (data: z.infer<TSchema>) => void | Promise<void>;
+  onReset?: () => void;
 }
 
 export function ModalForm<TSchema extends z.ZodType<any, any>>({
   formProps,
   onSubmit,
+  onReset,
   disableSave: propDisableSave,
   open,
   onOpenChange,
@@ -55,6 +59,30 @@ export function ModalForm<TSchema extends z.ZodType<any, any>>({
       open={open}
       onOpenChange={onOpenChange}
       disableSave={propDisableSave || hasErrors}
+      additionalButtons={
+        <>
+          {modalProps.additionalButtons}
+          {onReset && (
+            <Button
+              variant="outline"
+              onClick={() => {
+                try {
+                  onReset();
+                  setFormData(null);
+                  setFormErrors({});
+                  // Close the modal after resetting the form
+                  onOpenChange?.(false);
+                } catch (err) {
+                  console.error("[ModalForm] onReset error:", err);
+                }
+              }}
+              size="sm"
+              label="Reset"
+              icon={<Brush className="size-3" />}
+            />
+          )}
+        </>
+      }
     >
       <ErrorDisplay errors={formErrors} />
       <FormComponent {...formProps} hideSubmitButton onChange={handleChange} />

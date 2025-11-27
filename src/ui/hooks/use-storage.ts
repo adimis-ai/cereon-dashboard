@@ -57,26 +57,42 @@ export const useStorageHook = <TValue>(
 
   const setValue = useCallback(
     (valueOrFn: React.SetStateAction<TValue | null | undefined>) => {
-      const newValue =
-        typeof valueOrFn === "function"
-          ? (valueOrFn as (prev: TValue | null | undefined) =>
-              TValue | null | undefined)(storedValue)
-          : valueOrFn;
+      setStoredValue((prevStored) => {
+        const newValue =
+          typeof valueOrFn === "function"
+            ? (valueOrFn as (
+                prev: TValue | null | undefined
+              ) => TValue | null | undefined)(prevStored)
+            : valueOrFn;
 
-      const serialized = serializeValue(newValue);
-      setStoredValue(newValue as TValue | null | undefined);
-      if (newValue === null || typeof newValue === "undefined") {
-        storage.removeItem(storageKey);
-      } else {
-        storage.setItem(storageKey, serialized);
-      }
-      window.dispatchEvent(
-        new CustomEvent(eventName, {
-          detail: { key: storageKey, value: serialized },
-        })
-      );
+        if (newValue === null || typeof newValue === "undefined") {
+          storage.removeItem(storageKey);
+          window.dispatchEvent(
+            new CustomEvent(eventName, {
+              detail: { key: storageKey, value: null },
+            })
+          );
+          return newValue as TValue | null | undefined;
+        }
+
+        const serialized = serializeValue(newValue);
+        try {
+          storage.setItem(storageKey, serialized);
+        } catch (e) {
+          // If storage quota exceeded or disabled, still update state
+          // but don't block execution. Swallow the error silently.
+        }
+
+        window.dispatchEvent(
+          new CustomEvent(eventName, {
+            detail: { key: storageKey, value: serialized },
+          })
+        );
+
+        return newValue as TValue | null | undefined;
+      });
     },
-    [storage, storageKey, eventName, storedValue]
+    [storage, storageKey, eventName]
   );
 
   const removeValue = useCallback(() => {
