@@ -139,79 +139,27 @@ export function TableCard({
     number | undefined
   >("sessionStorage", totalKey, undefined);
 
-  const seenKeysRef = React.useRef<Set<string>>(new Set());
-
-  // Accumulate incoming records (streaming). We avoid re-adding rows we've already seen
-  // by checking a stable key (id fields or JSON fallback). Header records (no rows)
-  // are used to set total/columns if provided.
+  // Use only the latest incoming record (do not merge multiple records)
   useEffect(() => {
-    console.log("[TableCard] Incoming records:", records);
+    console.log("[TableCard] Incoming records (using latest only):", records);
     if (!records || records.length === 0) return;
-    // Fast-path for HTTP variant: records represent final page(s)
-    if (isHttpCard) {
-      // Flatten rows across all records and use as authoritative set
-      const flatRows: Record<string, any>[] = [];
-      let headerCols: string[] | undefined = undefined;
-      let headerTotal: number | undefined = undefined;
 
-      for (const record of records) {
-        if (Array.isArray(record.rows)) {
-          flatRows.push(...record.rows);
-        }
-        if (headerCols == null && Array.isArray(record.columns)) {
-          headerCols = record.columns;
-        }
-        if (headerTotal == null && typeof record.totalCount === "number") {
-          headerTotal = record.totalCount;
-        }
-      }
+    const latest = records[records.length - 1];
+    if (!latest) return;
 
-      // Replace collected storage with authoritative HTTP response
-      setCollectedRows(flatRows);
-      if (headerCols !== undefined) setCollectedColumns(headerCols);
-      if (headerTotal !== undefined) setCollectedTotal(headerTotal);
-
-      // Clear streaming dedup state to avoid mixing modes
-      seenKeysRef.current = new Set();
-      return;
+    if (Array.isArray(latest.rows)) {
+      setCollectedRows(latest.rows);
+    } else {
+      setCollectedRows([]);
     }
 
-    let addedRows: Record<string, any>[] = [];
-
-    for (const record of records) {
-      if (Array.isArray(record.rows)) {
-        if (record.rows.length === 0 && record.totalCount != null) {
-          if (collectedTotal == null) setCollectedTotal(record.totalCount);
-          if (Array.isArray(record.columns) && collectedColumns == null) {
-            setCollectedColumns(record.columns);
-          }
-        } else {
-          for (const row of record.rows) {
-            const key = String(
-              (row &&
-                (row.id || row["id"] || row["Crime ID"] || row["crime_id"])) ||
-                JSON.stringify(row)
-            );
-            if (!seenKeysRef.current.has(key)) {
-              seenKeysRef.current.add(key);
-              addedRows.push(row);
-            }
-          }
-        }
-      }
-
-      if (collectedTotal == null && record.totalCount != null) {
-        setCollectedTotal(record.totalCount);
-      }
+    if (Array.isArray(latest.columns)) {
+      setCollectedColumns(latest.columns);
     }
 
-    if (addedRows.length > 0) {
-      setCollectedRows((prev: Record<string, any>[] | null | undefined) => [
-        ...(Array.isArray(prev) ? prev : []),
-        ...addedRows,
-      ]);
+    if (typeof latest.totalCount === "number") {
+      setCollectedTotal(latest.totalCount);
     }
-    // we intentionally do not reset seenKeysRef on records change to preserve history
   }, [records]);
 
   // Extract and merge rows from all records
