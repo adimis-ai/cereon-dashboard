@@ -216,6 +216,8 @@ function DashboardCardInternal<
 }: DashboardCardProps<K, M, R>) {
   const { getCardState, setCardState, animations, registeredCards, theme } =
     useDashboard();
+  const showPanel = card.panel !== false;
+  const isTransparent = card.transparent === true;
   const { cardRef, setFocus } = useCardVisibility(reportId, card.id);
   const [records] = useDashboardRecord(reportId, card.id);
   const { executeQuery, state } = useCardExecution(reportId, card.id);
@@ -224,7 +226,7 @@ function DashboardCardInternal<
   const hasCustomRender = typeof card.renderCard === "function";
 
   const handleQueryCall = useCallback(async () => {
-    if(card.renderCard && typeof card.renderCard === "function") return;
+    if (card.renderCard && typeof card.renderCard === "function") return;
     if (state.loadingState === "loading") return;
 
     try {
@@ -282,8 +284,13 @@ function DashboardCardInternal<
     }
   }, [cardState.loadingState, handleQueryCall]);
 
+  const bgShadowClasses = isTransparent
+    ? "bg-transparent shadow-none"
+    : "bg-card shadow-sm";
+
   const cardClasses = cn(
-    "bg-card text-card-foreground rounded-xl border shadow-sm md:min-w-0 flex flex-col transition-all duration-200 ease-out",
+    bgShadowClasses,
+    "text-card-foreground rounded-xl border md:min-w-0 flex flex-col transition-all duration-200 ease-out",
     cardState.loadingState === "error" && "border-destructive",
     className
   );
@@ -414,21 +421,30 @@ function DashboardCardInternal<
     <Fragment key={`${reportId}-${card.id}-report-card`}>
       <div
         ref={cardRef as React.RefObject<HTMLDivElement>}
-        className={cardClasses}
+        className={
+          showPanel
+            ? cardClasses
+            : cn(
+                "md:min-w-0 flex flex-col transition-all duration-200 ease-out",
+                className
+              )
+        }
         onFocus={() => setFocus(true)}
         onBlur={() => setFocus(false)}
         tabIndex={0}
         aria-label={card.title || "Dashboard card"}
       >
-        {!hasCustomRender && !card.hideHeader && card.kind !== "number" && (
-          <div className="px-2 pt-2">{renderCardHeaderContent()}</div>
-        )}
+        {!hasCustomRender &&
+          showPanel &&
+          !card.hideHeader &&
+          card.kind !== "number" && (
+            <div className="px-2 pt-2">{renderCardHeaderContent()}</div>
+          )}
         <div
           className={cn(
             "flex-1 overflow-hidden",
-            // When a custom render function is provided we want the content
-            // to occupy the full card without the usual horizontal padding.
-            hasCustomRender ? "px-0 py-0" : "px-4"
+            // If the card is used as a non-panel we remove all padding/margins.
+            !showPanel ? "px-0 py-0" : hasCustomRender ? "px-0 py-0" : "px-4"
           )}
         >
           <div className={cn("h-full relative")}>
@@ -554,6 +570,32 @@ function DashboardCardInternal<
                   );
                 }
 
+                // If the card has no query configured, render the registered
+                // component immediately (useful for static cards like markdown).
+                if (!card.query) {
+                  const RegisteredComponent = registeredCards?.[card.kind];
+                  if (RegisteredComponent) {
+                    try {
+                      return (
+                        <RegisteredComponent
+                          reportId={reportId}
+                          card={card}
+                          records={records}
+                          state={cardState}
+                          params={runtimeParams}
+                          className={className}
+                        />
+                      );
+                    } catch (e) {
+                      // fall through to idle UI on render errors
+                      console.error(
+                        "Error rendering registered component for card without query:",
+                        e
+                      );
+                    }
+                  }
+                }
+
                 // Idle state
                 if (cardState.loadingState === "idle") {
                   return (
@@ -585,7 +627,10 @@ function DashboardCardInternal<
             </span>
           </div>
         </div>
-        {!hasCustomRender && !card.hideFooter && renderCardFooterContent()}
+        {!hasCustomRender &&
+          showPanel &&
+          !card.hideFooter &&
+          renderCardFooterContent()}
       </div>
     </Fragment>
   );

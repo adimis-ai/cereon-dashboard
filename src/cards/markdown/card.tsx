@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useRef, useEffect } from "react";
 import { BaseCardProps } from "../../types";
 import {
   BaseDashboardCardRecord,
@@ -69,6 +69,8 @@ export function MarkdownCard({
 }: MarkdownCardProps) {
   const settings = card.settings as DashboardMarkdownSettings;
   const record = records?.[0] as DashboardMarkdownCardRecord | undefined;
+  const showPanel = card.panel !== false;
+  const isTransparent = card.transparent === true;
 
   // Process markdown content and options
   const { markdownContent, hasContent } = useMemo(() => {
@@ -184,11 +186,45 @@ export function MarkdownCard({
     return styles;
   }, [settings?.maxHeight]);
 
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
+
+  // Ensure we can override stylesheet's !important rules by setting inline styles with priority
+  useEffect(() => {
+    const el = wrapperRef.current;
+    if (!el) return;
+
+    const bgValue = isTransparent ? "transparent" : "var(--card)";
+    try {
+      el.style.setProperty("background", bgValue, "important");
+      el.style.setProperty("background-color", bgValue, "important");
+      el.style.setProperty("color", "var(--card-foreground)", "important");
+    } catch (e) {
+      // In case setProperty with priority isn't supported in some envs, fall back
+      // eslint-disable-next-line no-console
+      console.warn("Failed to set important styles on markdown wrapper", e);
+      // best-effort fallback
+      // @ts-ignore
+      el.style.background = bgValue;
+      // @ts-ignore
+      el.style.color = "var(--card-foreground)";
+    }
+
+    return () => {
+      try {
+        el.style.removeProperty("background");
+        el.style.removeProperty("background-color");
+        el.style.removeProperty("color");
+      } catch (e) {
+        // ignore
+      }
+    };
+  }, [isTransparent, theme, record?.styles]);
+
   // No content available
   if (!hasContent) {
     return (
       <div className={cn("h-full flex items-center justify-center", className)}>
-        <div className="text-center p-4">
+        <div className={cn("text-center", showPanel ? "p-4" : "p-0")}>
           <div className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-muted/50 text-muted-foreground mb-2">
             <FileText className="w-4 h-4" />
           </div>
@@ -205,7 +241,7 @@ export function MarkdownCard({
   if (markdownContent === null) {
     return (
       <div className={cn("h-full flex items-center justify-center", className)}>
-        <div className="text-center p-4">
+        <div className={cn("text-center", showPanel ? "p-4" : "p-0")}>
           <AlertTriangle className="w-8 h-8 text-destructive mx-auto mb-2" />
           <p className="text-sm font-medium">Invalid markdown content</p>
           <p className="text-xs text-muted-foreground mt-1">
@@ -218,10 +254,11 @@ export function MarkdownCard({
 
   /* inside MarkdownCard return, replace the <div className="markdown-content ..."> ... <MarkdownPreview ... /> ... </div> */
   return (
-    <div className={cn("h-full mt-4 pb-4", className)}>
+    <div className={cn("h-full", showPanel ? "mt-4 pb-4" : "m-0 p-0", className)}>
       <div
         className={cn(
-          "h-full bg-card rounded-lg relative",
+          "h-full rounded-lg relative",
+          (isTransparent ? "bg-transparent" : "bg-card"),
           settings?.containerClasses
         )}
       >
@@ -231,9 +268,10 @@ export function MarkdownCard({
 
         {/* new wrapper that applies the CSS variables exactly */}
         <div
+          ref={wrapperRef}
           className="markdown-preview-root w-full h-full"
           style={{
-            background: "var(--card)",
+            background: isTransparent ? "transparent" : "var(--card)",
             color: "var(--card-foreground)",
           }}
           data-color-mode={theme}

@@ -254,6 +254,8 @@ export interface DashboardReportCardSpec<
   "aria-label"?: string;
   isDraggable?: boolean;
   isResizable?: boolean;
+  panel?: boolean;
+  transparent?: boolean;
   query?: DashboardQuerySpec<M, R>;
   gridPosition?: CardGridPosition;
   renderCard?: (props?: BaseCardProps<K, M, R>) => React.ReactNode;
