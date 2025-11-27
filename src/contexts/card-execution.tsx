@@ -1352,7 +1352,10 @@ export const CardExecutionProvider = <
 
         const resolvedQuery = resolveParamPlaceholders(
           processedQuery,
-          runtimeParams as Record<string, unknown>
+          {
+            ...runtimeParams,
+            ...params,
+          } as Record<string, unknown>
         );
 
         let rawData: any;
