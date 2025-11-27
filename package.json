@@ -1,6 +1,6 @@
 {
   "name": "@cereon/dashboard",
-  "version": "0.2.4",
+  "version": "0.2.1",
   "description": "Reusable React dashboard components and cards for Cereon",
   "type": "module",
   "keywords": [
