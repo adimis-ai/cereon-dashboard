@@ -3,6 +3,7 @@ import "./ui/styles/globals.css";
 export { Dashboard } from "./components/Dashboard";
 export { DashboardProvider, useDashboard } from "./contexts/dashboard";
 export { DashboardRecordProvider } from "./contexts/dashboard-record";
+export * from "./ui/index"
 
 export type {
   DashboardProps,

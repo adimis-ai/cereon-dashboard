@@ -37,6 +37,7 @@ export * from "./collapsible";
 export * from "./command";
 export * from "./context-menu";
 export * from "./date-range";
+export * from "./pagination";
 export * from "./datetime-range";
 export * from "./datetime";
 export * from "./dialog";

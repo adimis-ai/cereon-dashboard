@@ -1,11 +1,8 @@
 "use client";
 
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { BaseCardProps } from "../../types";
-import {
-  BaseDashboardCardRecord,
-  CommonCardSettings,
-} from "../../types";
+import { BaseDashboardCardRecord, CommonCardSettings } from "../../types";
 import { cn } from "../../ui";
 import { Table2, AlertTriangle } from "lucide-react";
 import {
@@ -17,7 +14,7 @@ import {
   TableCell,
   TableContainer,
   Pagination,
-  useStorageHook
+  useStorageHook,
 } from "../../ui";
 
 /**
@@ -46,8 +43,6 @@ export interface DashboardTableColumn {
 export interface DashboardTableSettings extends CommonCardSettings {
   /** Column definitions */
   columns?: DashboardTableColumn[];
-  /** Enable search/filtering */
-  enableSearch?: boolean;
   /** Compact table display */
   compact?: boolean;
   /** Show row numbers */
@@ -60,8 +55,8 @@ export interface DashboardTableSettings extends CommonCardSettings {
   pageSize?: number;
   /** Options for rows per page */
   pageSizeOptions?: number[];
-  /** Columns to include in search if * then all columns should be searchable*/
-  searchableColumns?: string[] | "*";
+  /** Column to use as index (unique identifier) default to id */
+  indexColumn?: string;
 }
 
 /**
@@ -90,157 +85,16 @@ export function TableCard({
   className,
   reportId,
 }: TableCardProps) {
-  const isHttpCard = card.query?.variant === "http";
   const settings = card.settings as DashboardTableSettings;
-  const storageKey = useMemo(
-    () => `table-card-${reportId}-${card.id}-page`,
-    [reportId, card.id]
-  );
+  const isHttp = card.query?.variant === "http";
 
-  // current page persisted in sessionStorage
-  const { storedValue: storedPage, setValue: setStoredPage } = useStorageHook<number>(
-    "sessionStorage",
-    storageKey,
-    1
-  );
-  const currentPage = Number(storedValueToNumber(storedPage, 1));
-  // wrapper so existing code can call setCurrentPage
-  const setCurrentPage = (p: number) => setStoredPage(Number(p));
-
-  // helper to normalize stored values
-  function storedValueToNumber(v: any, fallback: number) {
-    if (typeof v === "number") return v;
-    if (typeof v === "string") return Number(v) || fallback;
-    return fallback;
-  }
-
-  // Persisted keys for collected streaming state
-  const rowsKey = useMemo(
-    () => `table-card-${reportId}-${card.id}-rows`,
-    [reportId, card.id]
-  );
-  const colsKey = useMemo(
-    () => `table-card-${reportId}-${card.id}-cols`,
-    [reportId, card.id]
-  );
-  const totalKey = useMemo(
-    () => `table-card-${reportId}-${card.id}-total`,
-    [reportId, card.id]
-  );
-
-  // Persist collected records across streaming updates (stored in sessionStorage)
-  const { storedValue: collectedRows, setValue: setCollectedRows } = useStorageHook<
-    Record<string, any>[]
-  >("sessionStorage", rowsKey, []);
-  const { storedValue: collectedColumns, setValue: setCollectedColumns } = useStorageHook<
-    string[] | undefined
-  >("sessionStorage", colsKey, undefined);
-  const { storedValue: collectedTotal, setValue: setCollectedTotal } = useStorageHook<
-    number | undefined
-  >("sessionStorage", totalKey, undefined);
-
-  // Use only the latest incoming record (do not merge multiple records)
   useEffect(() => {
-    console.log("[TableCard] Incoming records (using latest only):", records);
-    if (!records || records.length === 0) return;
-
-    const latest = records[records.length - 1];
-    if (!latest) return;
-
-    if (Array.isArray(latest.rows)) {
-      setCollectedRows(latest.rows);
-    } else {
-      setCollectedRows([]);
-    }
-
-    if (Array.isArray(latest.columns)) {
-      setCollectedColumns(latest.columns);
-    }
-
-    if (typeof latest.totalCount === "number") {
-      setCollectedTotal(latest.totalCount);
-    }
+    console.log(
+      `TableCard records for report ${reportId} - card ${card.id}:`,
+      JSON.stringify(records)
+    );
   }, [records]);
 
-  // Extract and merge rows from all records
-  // normalize nullable stored values into safe locals
-  const rowsArray: Record<string, any>[] = Array.isArray(collectedRows)
-    ? collectedRows
-    : [];
-  const colsArray: string[] | undefined = Array.isArray(collectedColumns)
-    ? collectedColumns
-    : undefined;
-  const totalVal: number | undefined = typeof collectedTotal === "number" ? collectedTotal : undefined;
-
-  const { mergedRows, columns, totalCount } = useMemo(() => {
-    // Use persisted collected rows/columns/total when available; fall back to incoming data
-    const allRows = rowsArray.length > 0 ? rowsArray : [];
-    const total = totalVal;
-    const headerColumns = colsArray;
-
-    // Determine columns in this order of preference:
-    // 1. settings.columns, 2. headerColumns (from header record), 3. derive from data in arrival order
-    let finalColumns: DashboardTableColumn[];
-    if (settings?.columns && settings.columns.length > 0) {
-      finalColumns = settings.columns.filter((col) => !col.hidden);
-    } else if (headerColumns && headerColumns.length > 0) {
-      finalColumns = headerColumns.map((key: string) => ({
-        key,
-        header: key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, " "),
-        type: "text" as const,
-        sortable: true,
-      }));
-    } else {
-      // Preserve insertion order of keys as they appear in rows
-      const seen = new Set<string>();
-      const keysInOrder: string[] = [];
-      for (const row of allRows) {
-        Object.keys(row).forEach((k) => {
-          if (!seen.has(k)) {
-            seen.add(k);
-            keysInOrder.push(k);
-          }
-        });
-      }
-      finalColumns = keysInOrder.map((key) => ({
-        key,
-        header: key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, " "),
-        type: "text" as const,
-        sortable: true,
-      }));
-    }
-
-    return {
-      mergedRows: allRows,
-      columns: finalColumns,
-      // Prefer header totalCount when present; fallback to number of rows
-      totalCount: total ?? allRows.length,
-    };
-  }, [rowsArray, colsArray, totalVal, settings?.columns]);
-
-  // Pagination settings (declare before effects that use them)
-  const pageSize = settings?.pageSize || 10;
-  const enablePagination = (settings?.enablePagination ?? true) !== false;
-
-  // Ensure current page stays in range as streamed totalCount/rows change
-  useEffect(() => {
-    const pages = Math.max(
-      1,
-      Math.ceil((totalCount || mergedRows.length) / pageSize)
-    );
-    if (currentPage > pages) {
-      setCurrentPage(pages);
-    }
-  }, [totalCount, mergedRows.length, pageSize, currentPage]);
-
-  // Calculate paginated data
-  const paginatedRows = useMemo(() => {
-    if (!enablePagination) return mergedRows;
-    const startIndex = (currentPage - 1) * pageSize;
-    return mergedRows.slice(startIndex, startIndex + pageSize);
-  }, [mergedRows, currentPage, pageSize, enablePagination]);
-
-  // Format cell value based on column type
   const formatCellValue = (value: any, column: DashboardTableColumn) => {
     if (value == null) return "";
 
@@ -281,11 +135,38 @@ export function TableCard({
   };
 
   // No data available
+  // We'll accumulate rows across streaming records (when not http)
+  const indexColumn = settings?.indexColumn || "id";
+
+  // Merge incoming records into a map to dedupe by indexColumn
+  const mergedRows = useMemo(() => {
+    const map = new Map<any, Record<string, any>>();
+    // If the source was http, records array likely contains a single record with all rows
+    for (const rec of records) {
+      const rows = Array.isArray(rec.rows) ? rec.rows : [];
+      for (const row of rows) {
+        const rawKey = row?.[indexColumn];
+        if (typeof rawKey !== "undefined" && rawKey !== null) {
+          const keyStr = String(rawKey);
+          // Keep latest occurrence (streaming will update existing key)
+          const existing = map.get(keyStr) as Record<string, any> | undefined;
+          map.set(keyStr, { ...(existing || {}), ...row });
+        } else {
+          // For rows without indexColumn, use a stable JSON key so duplicates merge
+          const stableKey = JSON.stringify(row);
+          const existing = map.get(stableKey) as
+            | Record<string, any>
+            | undefined;
+          map.set(stableKey, { ...(existing || {}), ...row });
+        }
+      }
+    }
+    return Array.from(map.values());
+  }, [records, indexColumn]);
+
   if (mergedRows.length === 0) {
     return (
-      <div
-        className={cn("h-full flex items-center justify-center", className)}
-      >
+      <div className={cn("h-full flex items-center justify-center", className)}>
         <div className="text-center p-4">
           <div className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-muted/50 text-muted-foreground mb-2">
             <Table2 className="w-4 h-4" />
@@ -298,6 +179,77 @@ export function TableCard({
       </div>
     );
   }
+
+  // Determine columns: prefer settings.columns (with keys), else from record.columns, else infer from first row
+  const columnDefs: DashboardTableColumn[] = useMemo(() => {
+    if (settings?.columns && settings.columns.length > 0) {
+      return settings.columns;
+    }
+
+    // Try to find columns from incoming records
+    for (const rec of records) {
+      if (Array.isArray(rec.columns) && rec.columns.length > 0) {
+        return rec.columns.map((c: string) => ({ key: c, header: c }));
+      }
+    }
+
+    // Fallback to keys of first merged row
+    const first = mergedRows[0] || {};
+    return Object.keys(first).map((k) => ({ key: k, header: k }));
+  }, [settings?.columns, records, mergedRows]);
+
+  // Pagination: persist page and pageSize per card via useStorageHook
+  const storageKeyBase = `cereon.table.${reportId}.${card.id}`;
+  const { storedValue: storedPage, setValue: setPage } = useStorageHook<number>(
+    "localStorage",
+    `${storageKeyBase}.page`,
+    1
+  );
+  const { storedValue: storedPageSize, setValue: setPageSize } =
+    useStorageHook<number>(
+      "localStorage",
+      `${storageKeyBase}.pageSize`,
+      settings?.pageSize || 10
+    );
+
+  const page =
+    typeof storedPage === "number" && storedPage > 0 ? storedPage : 1;
+  const pageSize =
+    typeof storedPageSize === "number" && storedPageSize > 0
+      ? storedPageSize
+      : settings?.pageSize || 10;
+
+  // Clamp page when mergedRows changes
+  useEffect(() => {
+    const totalPages = Math.max(1, Math.ceil(mergedRows.length / pageSize));
+    if (page > totalPages) {
+      setPage(totalPages);
+    }
+  }, [mergedRows.length, page, pageSize, setPage]);
+
+  const start = (page - 1) * pageSize;
+  const end = start + pageSize;
+  const visibleRows =
+    settings?.enablePagination === false
+      ? mergedRows
+      : mergedRows.slice(start, end);
+
+  // Final deduplication pass: ensure visibleRows contain unique rows by indexColumn
+  const dedupedVisibleRows = useMemo(() => {
+    console.log("[TableCard] Deduping visible rows:", visibleRows);
+    const seen = new Set<string>();
+    const out: Record<string, any>[] = [];
+    for (const r of visibleRows) {
+      const rawKey = r?.[indexColumn];
+      const key = typeof rawKey !== "undefined" && rawKey !== null ? String(rawKey) : JSON.stringify(r);
+      if (!seen.has(key)) {
+        seen.add(key);
+        out.push(r);
+      }
+    }
+    console.log("[TableCard] Deduped visible rows:", out);
+    return out;
+  }, [visibleRows, indexColumn]);
 
   try {
     return (
@@ -317,66 +269,48 @@ export function TableCard({
                   {settings?.showRowNumbers && (
                     <TableHead className="w-12">#</TableHead>
                   )}
-                  {columns.map((column) => (
+                  {columnDefs.map((col) => (
                     <TableHead
-                      key={column.key}
-                      style={{
-                        width: column.width ? `${column.width}px` : undefined,
-                      }}
-                      className={cn(
-                        column.sortable && "cursor-pointer hover:bg-muted/50",
-                        "font-medium"
-                      )}
+                      key={col.key}
+                      className={col.width ? undefined : ""}
                     >
-                      {column.header}
+                      {col.header}
                     </TableHead>
                   ))}
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {paginatedRows.map((row, rowIndex) => {
-                  const globalRowIndex = enablePagination
-                    ? (currentPage - 1) * pageSize + rowIndex + 1
-                    : rowIndex + 1;
-
-                  // Stable key: prefer explicit id fields when streaming; fallback to global index
-                  const rowKey =
-                    (row &&
-                      (row.id ||
-                        row["id"] ||
-                        row["Crime ID"] ||
-                        row["crime_id"])) ||
-                    `row-${globalRowIndex}`;
-
-                  return (
-                    <TableRow key={String(rowKey)} isOdd={rowIndex % 2 === 1}>
-                      {settings?.showRowNumbers && (
-                        <TableCell className="font-mono text-muted-foreground">
-                          {globalRowIndex}
-                        </TableCell>
-                      )}
-                      {columns.map((column) => (
-                        <TableCell key={column.key}>
-                          {column.render
-                            ? column.render(row[column.key], row)
-                            : formatCellValue(row[column.key], column)}
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  );
-                })}
+                {dedupedVisibleRows.map((row, rowIndex) => (
+                  <TableRow
+                    key={row[indexColumn] ?? rowIndex}
+                    isOdd={rowIndex % 2 === 1}
+                  >
+                    {settings?.showRowNumbers && (
+                      <TableCell className="w-12">
+                        {start + rowIndex + 1}
+                      </TableCell>
+                    )}
+                    {columnDefs.map((col) => (
+                      <TableCell key={col.key}>
+                        {col.render
+                          ? col.render(row[col.key], row)
+                          : formatCellValue(row[col.key], col)}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))}
               </TableBody>
             </Table>
           </TableContainer>
         </div>
 
-        {enablePagination && mergedRows.length > pageSize && (
-          <div className="border-t p-4">
+        {settings?.enablePagination !== false && (
+          <div className="p-2 border-t bg-muted/25">
             <Pagination
-              page={currentPage}
-              count={totalCount}
+              page={page}
+              count={mergedRows.length}
               pageSize={pageSize}
-              onPageChange={setCurrentPage}
+              onPageChange={(p) => setPage(p)}
               align="right"
             />
           </div>
