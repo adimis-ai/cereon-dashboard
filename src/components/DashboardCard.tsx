@@ -313,7 +313,7 @@ function DashboardCardInternal<
           size: "sm",
         }}
         title={card.title ? `${card.title} - Filters` : "Filters"}
-        description={card.description ?? "Adjust filters for this card"}
+        // description={card.description ?? "Adjust filters for this card"}
         formProps={{
           formFields: filterSchema?.schema ?? [],
           disableForm: filterSchema?.disabled,
