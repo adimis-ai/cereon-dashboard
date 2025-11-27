@@ -88,6 +88,22 @@ export function TableCard({
   const settings = card.settings as DashboardTableSettings;
   const isHttp = card.query?.variant === "http";
 
+  // Accumulator for streamed rows when variant is not http.
+  // Persist streamed rows across reloads using useStorageHook.
+  // Stored as an object map: { [key: string]: Record<string, any> }
+  const storageKeyBase = `cereon.table.${reportId}.${card.id}`;
+  const { storedValue: storedRowsStored, setValue: setStoredRows } =
+    useStorageHook<Record<string, Record<string, any>> | null>(
+      "localStorage",
+      `${storageKeyBase}.rows`,
+      {} as Record<string, Record<string, any>>
+    );
+
+  // Reset persisted rows when switching report/card or switching to http
+  useEffect(() => {
+    setStoredRows({});
+  }, [reportId, card.id, isHttp]);
+
   useEffect(() => {
     console.log(
       `TableCard records for report ${reportId} - card ${card.id}:`,
@@ -138,31 +154,84 @@ export function TableCard({
   // We'll accumulate rows across streaming records (when not http)
   const indexColumn = settings?.indexColumn || "id";
 
-  // Merge incoming records into a map to dedupe by indexColumn
+  // Merge incoming records into a map to dedupe by indexColumn.
+  // For HTTP variant: treat records as single payload and build a fresh map.
+  // For streaming variant: merge incoming rows into persisted stored rows.
   const mergedRows = useMemo(() => {
-    const map = new Map<any, Record<string, any>>();
-    // If the source was http, records array likely contains a single record with all rows
+    if (isHttp) {
+      const map = new Map<any, Record<string, any>>();
+      for (const rec of records) {
+        const rows = Array.isArray(rec.rows) ? rec.rows : [];
+        for (const row of rows) {
+          const rawKey = row?.[indexColumn];
+          if (typeof rawKey !== "undefined" && rawKey !== null) {
+            const keyStr = String(rawKey);
+            const existing = map.get(keyStr) as Record<string, any> | undefined;
+            map.set(keyStr, { ...(existing || {}), ...row });
+          } else {
+            const stableKey = JSON.stringify(row);
+            const existing = map.get(stableKey) as
+              | Record<string, any>
+              | undefined;
+            map.set(stableKey, { ...(existing || {}), ...row });
+          }
+        }
+      }
+      return Array.from(map.values());
+    }
+
+    // Streaming: merge into persisted storage
+    const persisted = storedRowsStored || {};
+    const merged = { ...persisted } as Record<string, Record<string, any>>;
+
     for (const rec of records) {
       const rows = Array.isArray(rec.rows) ? rec.rows : [];
       for (const row of rows) {
         const rawKey = row?.[indexColumn];
-        if (typeof rawKey !== "undefined" && rawKey !== null) {
-          const keyStr = String(rawKey);
-          // Keep latest occurrence (streaming will update existing key)
-          const existing = map.get(keyStr) as Record<string, any> | undefined;
-          map.set(keyStr, { ...(existing || {}), ...row });
-        } else {
-          // For rows without indexColumn, use a stable JSON key so duplicates merge
-          const stableKey = JSON.stringify(row);
-          const existing = map.get(stableKey) as
-            | Record<string, any>
-            | undefined;
-          map.set(stableKey, { ...(existing || {}), ...row });
-        }
+        const key =
+          typeof rawKey !== "undefined" && rawKey !== null
+            ? String(rawKey)
+            : JSON.stringify(row);
+
+        const existing = merged[key] || {};
+        merged[key] = { ...(existing || {}), ...row };
       }
     }
-    return Array.from(map.values());
-  }, [records, indexColumn]);
+
+    // Return merged rows; persistence is handled in an effect to avoid
+    // triggering state updates during render (which causes re-renders).
+    return Object.values(merged);
+  }, [records, indexColumn, isHttp, storedRowsStored, setStoredRows]);
+
+  // Persist merged streamed rows when not HTTP. Do this in an effect so
+  // we don't call `setStoredRows` during render (prevents infinite loops).
+  useEffect(() => {
+    if (isHttp) return;
+
+    // Build an object map keyed by the stable key used above
+    const map: Record<string, Record<string, any>> = {};
+    for (const r of mergedRows) {
+      const rawKey = r?.[indexColumn];
+      const key =
+        typeof rawKey !== "undefined" && rawKey !== null
+          ? String(rawKey)
+          : JSON.stringify(r);
+      map[key] = r;
+    }
+
+    // Compare serialized forms to avoid unnecessary writes that trigger
+    // re-renders. If different, persist the new map.
+    try {
+      const prev = storedRowsStored || {};
+      const prevJson = JSON.stringify(prev);
+      const nextJson = JSON.stringify(map);
+      if (prevJson !== nextJson) {
+        setStoredRows(map);
+      }
+    } catch (e) {
+      // ignore storage errors
+    }
+  }, [isHttp, mergedRows, indexColumn, storedRowsStored, setStoredRows]);
 
   if (mergedRows.length === 0) {
     return (
@@ -199,18 +268,16 @@ export function TableCard({
   }, [settings?.columns, records, mergedRows]);
 
   // Pagination: persist page and pageSize per card via useStorageHook
-  const storageKeyBase = `cereon.table.${reportId}.${card.id}`;
   const { storedValue: storedPage, setValue: setPage } = useStorageHook<number>(
     "localStorage",
     `${storageKeyBase}.page`,
     1
   );
-  const { storedValue: storedPageSize, setValue: setPageSize } =
-    useStorageHook<number>(
-      "localStorage",
-      `${storageKeyBase}.pageSize`,
-      settings?.pageSize || 10
-    );
+  const { storedValue: storedPageSize } = useStorageHook<number>(
+    "localStorage",
+    `${storageKeyBase}.pageSize`,
+    settings?.pageSize || 10
+  );
 
   const page =
     typeof storedPage === "number" && storedPage > 0 ? storedPage : 1;
@@ -236,18 +303,21 @@ export function TableCard({
 
   // Final deduplication pass: ensure visibleRows contain unique rows by indexColumn
   const dedupedVisibleRows = useMemo(() => {
-    console.log("[TableCard] Deduping visible rows:", visibleRows);
+    console.log(`[TableCard] Deduping visible rows: ${card.id}`, visibleRows);
     const seen = new Set<string>();
     const out: Record<string, any>[] = [];
     for (const r of visibleRows) {
       const rawKey = r?.[indexColumn];
-      const key = typeof rawKey !== "undefined" && rawKey !== null ? String(rawKey) : JSON.stringify(r);
+      const key =
+        typeof rawKey !== "undefined" && rawKey !== null
+          ? String(rawKey)
+          : JSON.stringify(r);
       if (!seen.has(key)) {
         seen.add(key);
         out.push(r);
       }
     }
-    console.log("[TableCard] Deduped visible rows:", out);
+    console.log(`[TableCard] Deduped visible rows: ${card.id}`, out);
     return out;
   }, [visibleRows, indexColumn]);
 
